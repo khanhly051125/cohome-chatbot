@@ -35,6 +35,7 @@ Hotline: 079 666 9883. Website: cohomedecor.com`;
       }
     );
     const data = await response.json();
+    console.log("Gemini data:", JSON.stringify(data));
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Bạn thử lại nhé!';
     return res.status(200).json({ reply });
   } catch (err) {
