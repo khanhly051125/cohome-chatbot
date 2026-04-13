@@ -25,9 +25,13 @@ Hotline: 079 666 9883. Website: cohomedecor.com`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents
-        })
+  contents: [
+    {
+      role: "user",
+      parts: [{ text: SYSTEM_PROMPT + "\n\nKhách: " + message }]
+    }
+  ]
+})
       }
     );
     const data = await response.json();
