@@ -1,5 +1,3 @@
-const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
-
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -33,8 +31,6 @@ Hotline: 079 666 9883. Website: cohomedecor.com`;
   });
 
   const data = await response.json();
-  console.log("Gemini:", JSON.stringify(data).slice(0, 300));
-
   const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text
     || data?.error?.message
     || 'Bạn thử lại nhé!';
