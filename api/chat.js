@@ -10,30 +10,47 @@ module.exports = async function handler(req, res) {
 
   const SYSTEM_PROMPT = `Bạn là trợ lý tư vấn của CoHome Decor - shop nội thất và trang trí nhà cửa tại Đà Nẵng.
 Sản phẩm: thảm trải sàn, đèn trang trí, bình hoa, đồng hồ treo tường, nến thơm, tranh treo tường.
-Trả lời thân thiện, ngắn gọn bằng tiếng Việt.
+Trả lời thân thiện, ngắn gọn bằng tiếng Việt. Gợi ý sản phẩm phù hợp khi có thể.
 Hotline: 079 666 9883. Website: cohomedecor.com`;
 
-  const contents = [
-    ...(Array.isArray(history) ? history : []),
-    { role: 'user', parts: [{ text: message }] }
-  ];
+  // Chuyển history từ Gemini format → Groq/OpenAI format
+  const messages = [{ role: 'system', content: SYSTEM_PROMPT }];
+  if (Array.isArray(history)) {
+    for (const h of history) {
+      const role = h.role === 'model' ? 'assistant' : 'user';
+      const content = h.parts?.[0]?.text || '';
+      if (content) messages.push({ role, content });
+    }
+  }
+  messages.push({ role: 'user', content: message });
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile', // model mạnh nhất, vẫn free
+        max_tokens: 1024,
+        temperature: 0.7,
+        messages
+      })
+    });
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents
-    })
-  });
+    const data = await response.json();
 
-  const data = await response.json();
-  const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text
-    || data?.error?.message
-    || 'Bạn thử lại nhé!';
+    if (!response.ok) {
+      console.error('Groq API error:', data);
+      return res.status(200).json({ reply: 'Xin lỗi, hệ thống đang bận. Vui lòng gọi 079 666 9883!' });
+    }
 
-  return res.status(200).json({ reply });
-}
+    const reply = data?.choices?.[0]?.message?.content || 'Bạn thử lại nhé!';
+    return res.status(200).json({ reply });
+
+  } catch (e) {
+    console.error('Fetch error:', e);
+    return res.status(200).json({ reply: 'Xin lỗi, có lỗi xảy ra. Vui lòng gọi 079 666 9883 để được hỗ trợ!' });
+  }
+};
