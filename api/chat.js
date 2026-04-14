@@ -86,9 +86,9 @@ Quy tắc trả lời:
     return res.status(200).json({ reply });
 
   } catch (error) {
-    console.error('Server error:', error);
-    return res.status(200).json({
-      reply: 'Hệ thống đang bận, bạn thử lại sau nhé 💛'
-    });
-  }
+  console.error("ERROR:", error);
+  return res.status(200).json({
+    reply: "LỖI: " + error.message
+  });
+}
 }
